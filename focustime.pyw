@@ -7,7 +7,6 @@ Tema chiaro o scuro, pannello Preferenze e editor delle durate dal tasto destro.
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 import sys
@@ -19,6 +18,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from techniques import Technique, TECHNIQUES
+from settings import load_settings, save_settings
 
 try:
     import winsound
@@ -921,10 +921,7 @@ class Focustime:
         return app_dir() / "settings.json"
 
     def _load_settings(self) -> dict:
-        try:
-            return json.loads(self.settings_path.read_text("utf-8"))
-        except Exception:
-            return {}
+        return load_settings(self.settings_path)
 
     def _save_soon(self, *_args):
         """Salva fra poco.
@@ -955,11 +952,7 @@ class Focustime:
             "x": self.root.winfo_x(),
             "y": self.root.winfo_y(),
         }
-        try:
-            self.settings_path.write_text(
-                json.dumps(data, indent=2), encoding="utf-8")
-        except Exception:
-            pass
+        save_settings(self.settings_path, data)
 
     def _place_window(self, x, y):
         """Rimette la finestra dove l'avevi lasciata, anche su un altro monitor.
