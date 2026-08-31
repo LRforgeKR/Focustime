@@ -897,14 +897,6 @@ class Focustime:
             auto_next=self.auto_next.get(),
         )
 
-        self.phase = "focus"          # focus | rest | long
-        self.running = False
-        self.completed = 0
-        self.duration = 0.0
-        self.left = 0.0               # secondi rimanenti (conto alla rovescia)
-        self.up = 0.0                 # secondi trascorsi (Flowtime)
-        self.end_at = 0.0
-        self.start_at = 0.0
         self._toast: Toast | None = None
         self._about: About | None = None
         self._about_job = None
@@ -1257,7 +1249,7 @@ class Focustime:
             self.custom[base.key] = diff
         else:
             self.custom.pop(base.key, None)
-        self.running = False
+        self.engine.running = False
         self._enter_phase(self.phase if self.phase != "long" or self.tech.long_rest
                           else "rest", announce=False)
         self._save_settings()
@@ -1273,69 +1265,33 @@ class Focustime:
     def phase(self) -> str:
         return self.engine.phase
 
-    @phase.setter
-    def phase(self, value: str):
-        self.engine.phase = value
-
     @property
     def running(self) -> bool:
         return self.engine.running
-
-    @running.setter
-    def running(self, value: bool):
-        self.engine.running = value
 
     @property
     def completed(self) -> int:
         return self.engine.completed
 
-    @completed.setter
-    def completed(self, value: int):
-        self.engine.completed = value
-
     @property
     def duration(self) -> float:
         return self.engine.duration
-
-    @duration.setter
-    def duration(self, value: float):
-        self.engine.duration = value
 
     @property
     def left(self) -> float:
         return self.engine.left
 
-    @left.setter
-    def left(self, value: float):
-        self.engine.left = value
-
     @property
     def up(self) -> float:
         return self.engine.up
-
-    @up.setter
-    def up(self, value: float):
-        self.engine.up = value
 
     @property
     def end_at(self) -> float:
         return self.engine.end_at
 
-    @end_at.setter
-    def end_at(self, value: float):
-        self.engine.end_at = value
-
     @property
     def start_at(self) -> float:
         return self.engine.start_at
-
-    @start_at.setter
-    def start_at(self, value: float):
-        self.engine.start_at = value
-
-    @start_at.setter
-    def start_at(self, value: float):
-        self.engine.start_at = value
 
     @property
     def tech(self) -> Technique:
@@ -1396,12 +1352,6 @@ class Focustime:
             self._toast = Toast(self.root, t.emoji, f"{t.name} · {title}",
                                 body, "focus" if self.phase == "focus" else "rest")
 
-        def _advance(self, auto: bool):
-            self._sync_engine_config()
-            self.engine.advance(auto=auto)
-
-            self._announce()
-            self._render()
     # -- comandi ------------------------------------------------------------ #
 
     def toggle(self):
@@ -1428,7 +1378,7 @@ class Focustime:
     def cycle_technique(self):
         self._about_hide()
         self.index = (self.index + 1) % len(TECHNIQUES)
-        self.completed = 0
+        self.engine.completed = 0
         self._enter_phase("focus", announce=False)
         self._save_soon()
 
