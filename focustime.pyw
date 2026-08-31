@@ -911,7 +911,7 @@ class Focustime:
         self._build_ui()
         self._menu()
         self._apply_opacity()
-        self._enter_phase("focus", announce=False)
+        self._render()
         self._tick()
 
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
@@ -1250,12 +1250,17 @@ class Focustime:
         else:
             self.custom.pop(base.key, None)
         self.engine.running = False
-        self._enter_phase(
+
+        phase = (
             self.engine.phase
             if self.engine.phase != "long" or self.tech.long_rest
-            else "rest",
-            announce=False,
-        )       
+            else "rest"
+        )
+
+        self._sync_engine_config()
+        self.engine.enter_phase(phase)
+
+        self._render()
         self._save_settings()
 
     # -- stato -------------------------------------------------------------- #
@@ -1264,38 +1269,6 @@ class Focustime:
         """Sincronizza nel motore le opzioni controllate dalla GUI."""
         self.engine.technique = self.tech
         self.engine.auto_next = self.auto_next.get()
-
-    @property
-    def phase(self) -> str:
-        return self.engine.phase
-
-    @property
-    def running(self) -> bool:
-        return self.engine.running
-
-    @property
-    def completed(self) -> int:
-        return self.engine.completed
-
-    @property
-    def duration(self) -> float:
-        return self.engine.duration
-
-    @property
-    def left(self) -> float:
-        return self.engine.left
-
-    @property
-    def up(self) -> float:
-        return self.engine.up
-
-    @property
-    def end_at(self) -> float:
-        return self.engine.end_at
-
-    @property
-    def start_at(self) -> float:
-        return self.engine.start_at
 
     @property
     def tech(self) -> Technique:
@@ -1314,10 +1287,6 @@ class Focustime:
     def accent(self) -> str:
         return P["focus"] if self.engine.phase == "focus" else P["rest"]
 
-    @property
-    def flowing(self) -> bool:
-        return self.engine.flowing
-
     def _phase_label(self) -> str:
         if self.engine.flowing:
             return "FLOW ↑"
@@ -1326,20 +1295,6 @@ class Focustime:
             "rest": "PAUSA",
             "long": "PAUSA LUNGA",
         }[self.engine.phase]
-
-    def _enter_phase(
-        self,
-        phase: str,
-        announce: bool = True,
-        auto: bool = False,
-    ):
-            self._sync_engine_config()
-            self.engine.enter_phase(phase, auto=auto)
-
-            if announce:
-                 self._announce()
-
-            self._render()
 
     def _announce(self):
         t = self.tech
@@ -1385,9 +1340,13 @@ class Focustime:
 
     def cycle_technique(self):
         self._about_hide()
+
         self.index = (self.index + 1) % len(TECHNIQUES)
-        self.engine.completed = 0
-        self._enter_phase("focus", announce=False)
+
+        self.engine.auto_next = self.auto_next.get()
+        self.engine.set_technique(self.tech)
+
+        self._render()
         self._save_soon()
 
     def quit(self):
