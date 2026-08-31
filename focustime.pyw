@@ -1250,8 +1250,12 @@ class Focustime:
         else:
             self.custom.pop(base.key, None)
         self.engine.running = False
-        self._enter_phase(self.phase if self.phase != "long" or self.tech.long_rest
-                          else "rest", announce=False)
+        self._enter_phase(
+            self.engine.phase
+            if self.engine.phase != "long" or self.tech.long_rest
+            else "rest",
+            announce=False,
+        )       
         self._save_settings()
 
     # -- stato -------------------------------------------------------------- #
@@ -1308,16 +1312,20 @@ class Focustime:
 
     @property
     def accent(self) -> str:
-        return P["focus"] if self.phase == "focus" else P["rest"]
+        return P["focus"] if self.engine.phase == "focus" else P["rest"]
 
     @property
     def flowing(self) -> bool:
-        return self.phase == "focus" and self.tech.focus == 0
+        return self.engine.flowing
 
     def _phase_label(self) -> str:
-        if self.flowing:
+        if self.engine.flowing:
             return "FLOW ↑"
-        return {"focus": "FOCUS", "rest": "PAUSA", "long": "PAUSA LUNGA"}[self.phase]
+        return {
+            "focus": "FOCUS",
+            "rest": "PAUSA",
+            "long": "PAUSA LUNGA",
+        }[self.engine.phase]
 
     def _enter_phase(
         self,
@@ -1335,14 +1343,14 @@ class Focustime:
 
     def _announce(self):
         t = self.tech
-        if self.phase == "focus":
-            body = "Cronometro libero, fermalo quando esci dal flow" if self.flowing \
-                else f"{int(self.duration // 60)} minuti di concentrazione"
+        if self.engine.phase == "focus":
+            body = "Cronometro libero, fermalo quando esci dal flow" if self.engine.flowing \
+                else f"{int(self.engine.duration // 60)} minuti di concentrazione"
             title = "Si riparte"
             tones = [(523, 110), (659, 140)]
         else:
-            body = f"{int(self.duration // 60)} minuti di stacco"
-            title = "Pausa lunga" if self.phase == "long" else "Pausa"
+            body = f"{int(self.engine.duration // 60)} minuti di stacco"
+            title = "Pausa lunga" if self.engine.phase == "long" else "Pausa"
             tones = [(880, 110), (1046, 150)]
         if self.sound_on.get():
             beep(tones)
@@ -1350,7 +1358,7 @@ class Focustime:
             if self._toast is not None and self._toast.winfo_exists():
                 self._toast.destroy()
             self._toast = Toast(self.root, t.emoji, f"{t.name} · {title}",
-                                body, "focus" if self.phase == "focus" else "rest")
+                                body, "focus" if self.engine.phase == "focus" else "rest")
 
     # -- comandi ------------------------------------------------------------ #
 
@@ -1429,13 +1437,17 @@ class Focustime:
                                     zip(c.bbox(self.i_name), (-4, -4, 4, 4))])
         c.itemconfig(self.i_phase, text=self._phase_label(), fill=self.accent)
         c.itemconfig(self.i_time, fill=P["text"],
-                     text=mmss(self.up if self.flowing else self.left))
-        c.itemconfig(self.i_play, text="⏸" if self.running else "▶")
+                     text=mmss(self.engine.up if self.engine.flowing else self.engine.left))
+        c.itemconfig(self.i_play, text="⏸" if self.engine.running else "▶")
 
-        if self.flowing:
-            frac = min(self.up / (60 * M), 1.0)
+        if self.engine.flowing:
+            frac = min(self.engine.up / (60 * M), 1.0)
         else:
-            frac = 1 - (self.left / self.duration) if self.duration else 0.0
+            frac = (
+                1 - (self.engine.left / self.engine.duration)
+                if self.engine.duration
+                else 0.0
+            )
         x0, x1 = 18, W - 18
         frac = max(0.0, min(1.0, frac))
         c.coords(self.i_bar, x0, 117, x0 + frac * (x1 - x0), 117)
@@ -1443,8 +1455,12 @@ class Focustime:
                      state="hidden" if frac < 0.004 else "normal")
 
         slots = min(t.cycle if t.long_rest else 4, MAX_DOTS)
-        done = self.completed % slots if self.completed else 0
-        if self.completed and done == 0:
+        done = (
+            self.engine.completed % slots
+            if self.engine.completed
+            else 0
+        )
+        if self.engine.completed and done == 0:
             done = slots
         for i, dot in enumerate(self.dots):
             if i >= slots:
