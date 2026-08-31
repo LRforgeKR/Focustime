@@ -1461,18 +1461,18 @@ class Focustime:
     # -- loop e disegno ----------------------------------------------------- #
 
     def _tick(self):
-        if self.running:
-            now = time.monotonic()
-            if self.flowing:
-                self.up = now - self.start_at
-            else:
-                self.left = self.end_at - now
-                if self.left <= 0:
-                    self.left = 0
-                    self._advance(auto=True)
+        self._sync_engine_config()
+
+        phase_changed = self.engine.tick()
+
+        if phase_changed:
+            self._announce()
+
         self._ticks += 1
+
         if self.theme_mode == "auto" and self._ticks % 50 == 0:
             self._watch_system_theme()
+
         self._render()
         self._tick_job = self.root.after(100, self._tick)
 
