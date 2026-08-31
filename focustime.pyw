@@ -1265,6 +1265,11 @@ class Focustime:
 
     # -- stato -------------------------------------------------------------- #
 
+    def _sync_engine_config(self):
+        """Sincronizza nel motore le opzioni controllate dalla GUI."""
+        self.engine.technique = self.tech
+        self.engine.auto_next = self.auto_next.get()
+
     @property
     def phase(self) -> str:
         return self.engine.phase
@@ -1369,18 +1374,19 @@ class Focustime:
             return min(t.max_rest, max(t.min_rest, self.up / t.ratio))
         return t.rest
 
-    def _enter_phase(self, phase: str, announce: bool = True, auto: bool = False):
-        self.phase = phase
-        self.duration = self._phase_seconds(phase)
-        self.left = self.duration
-        self.up = 0.0
-        self.running = auto and self.auto_next.get()
-        now = time.monotonic()
-        self.end_at = now + self.left
-        self.start_at = now
-        if announce:
-            self._announce()
-        self._render()
+    def _enter_phase(
+        self,
+        phase: str,
+        announce: bool = True,
+        auto: bool = False,
+    ):
+            self._sync_engine_config()
+            self.engine.enter_phase(phase, auto=auto)
+
+            if announce:
+                 self._announce()
+
+            self._render()
 
     def _announce(self):
         t = self.tech
@@ -1401,45 +1407,34 @@ class Focustime:
             self._toast = Toast(self.root, t.emoji, f"{t.name} · {title}",
                                 body, "focus" if self.phase == "focus" else "rest")
 
-    def _advance(self, auto: bool):
-        if self.phase == "focus":
-            self.completed += 1
-            t = self.tech
-            long_due = t.long_rest and t.cycle and self.completed % t.cycle == 0
-            self._enter_phase("long" if long_due else "rest", auto=auto)
-        else:
-            self._enter_phase("focus", auto=auto)
+        def _advance(self, auto: bool):
+            self._sync_engine_config()
+            self.engine.advance(auto=auto)
 
+            self._announce()
+            self._render()
     # -- comandi ------------------------------------------------------------ #
 
     def toggle(self):
-        now = time.monotonic()
-        if self.running:
-            self.running = False
-            if self.flowing:
-                self.up = now - self.start_at
-            else:
-                self.left = max(0.0, self.end_at - now)
-        else:
-            self.running = True
-            self.start_at = now - self.up
-            self.end_at = now + self.left
+        self._sync_engine_config()
+        self.engine.toggle()
         self._render()
 
     def reset(self):
-        self.running = False
-        self.left = self.duration
-        self.up = 0.0
+        self.engine.reset()
         self._render()
 
     def skip(self):
-        if self.flowing and self.running:
-            self.up = time.monotonic() - self.start_at
-        self._advance(auto=True)
+        self._sync_engine_config()
+        self.engine.skip()
+
+        self._announce()
+        self._render()
 
     def reset_cycle(self):
-        self.completed = 0
-        self._enter_phase("focus", announce=False)
+        self._sync_engine_config()
+        self.engine.reset_cycle()
+        self._render()
 
     def cycle_technique(self):
         self._about_hide()
