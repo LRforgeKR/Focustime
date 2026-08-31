@@ -18,7 +18,12 @@ from dataclasses import replace
 from pathlib import Path
 
 from techniques import Technique, TECHNIQUES
-from settings import load_settings, save_settings
+from settings import (
+    get_settings_path,
+    load_settings,
+    migrate_legacy_settings,
+    save_settings,
+)
 
 try:
     import winsound
@@ -843,7 +848,11 @@ class Prefs(Panel):
 class Focustime:
 
     def __init__(self):
-        self.settings_path = self._settings_path()
+        legacy_settings = app_dir() / "settings.json"
+        self.settings_path = get_settings_path()
+
+        migrate_legacy_settings(legacy_settings, self.settings_path)
+
         cfg = self._load_settings()
 
         self.theme_mode = cfg.get("theme", "dark")
@@ -915,10 +924,6 @@ class Focustime:
         self.root.bind("<Control-q>", lambda _e: self.quit())
 
     # -- persistenza -------------------------------------------------------- #
-
-    @staticmethod
-    def _settings_path() -> Path:
-        return app_dir() / "settings.json"
 
     def _load_settings(self) -> dict:
         return load_settings(self.settings_path)
