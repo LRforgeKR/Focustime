@@ -15,8 +15,10 @@ import threading
 import time
 import tkinter as tk
 import webbrowser
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from pathlib import Path
+
+from techniques import Technique, TECHNIQUES
 
 try:
     import winsound
@@ -161,65 +163,6 @@ def set_starts_with_windows(on: bool) -> bool:
     except Exception:
         pass
     return starts_with_windows()
-
-
-# --------------------------------------------------------------------------- #
-# Tecniche
-# --------------------------------------------------------------------------- #
-
-@dataclass(frozen=True)
-class Technique:
-    key: str
-    emoji: str
-    name: str
-    focus: int              # durata focus in secondi (0 = cronometro in salita)
-    rest: int               # pausa breve
-    long_rest: int = 0      # pausa lunga (0 = nessuna)
-    cycle: int = 4          # focus da completare prima della pausa lunga
-    ratio: int = 0          # Flowtime: pausa = focus lavorato / ratio
-    min_rest: int = 3 * M   # Flowtime: pausa minima
-    max_rest: int = 30 * M  # Flowtime: pausa massima
-    about: str = ""         # spiegazione mostrata passando sul nome
-
-
-TECHNIQUES: list[Technique] = [
-    Technique(
-        "pomodoro", "\U0001F345", "Pomodoro", 25 * M, 5 * M, 15 * M, 4,
-        about="Venticinque minuti su un compito solo, poi cinque di stacco; "
-              "ogni quattro giri una pausa lunga. Nasce negli anni '80 da un "
-              "timer da cucina a forma di pomodoro. Serve a rendere il tempo "
-              "una cosa che vedi scorrere, e a spezzare i compiti grossi in "
-              "pezzi che non fanno paura.",
-    ),
-    Technique(
-        "5217", "⚡", "52 / 17", 52 * M, 17 * M,
-        about="Cinquantadue minuti di lavoro pieno e diciassette di stacco "
-              "vero. È il ritmo emerso dai dati di DeskTime osservando chi "
-              "rendeva di più: poche pause, ma lunghe abbastanza da "
-              "ricaricare davvero. Buona per una normale giornata al computer.",
-    ),
-    Technique(
-        "ultradian", "\U0001F30A", "Ultradian", 90 * M, 20 * M,
-        about="Novanta minuti seguono il ritmo ultradiano del cervello, lo "
-              "stesso che scandisce il sonno: circa un'ora e mezza di "
-              "attenzione, poi un calo fisiologico. È la tecnica del lavoro "
-              "profondo — partire costa di più, ma arrivi molto più a fondo.",
-    ),
-    Technique(
-        "flowtime", "\U0001F300", "Flowtime", 0, 0, ratio=5,
-        about="Nessun timer che ti interrompe: il cronometro sale e sei tu a "
-              "fermarlo quando senti che stai calando. La pausa la calcola "
-              "sul lavoro fatto, un quinto del tempo. Pensata per chi viene "
-              "buttato fuori dalla concentrazione da una campanella.",
-    ),
-    Technique(
-        "animedoro", "\U0001F3AC", "Animedoro", 40 * M, 20 * M,
-        about="Quaranta minuti di lavoro e venti di pausa lunga e piacevole, "
-              "il tempo di un episodio. La ricompensa è abbastanza grande da "
-              "farti venire voglia di arrivarci: funziona bene la sera e "
-              "quando il compito è noioso.",
-    ),
-]
 
 
 # --------------------------------------------------------------------------- #
