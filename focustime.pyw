@@ -1266,6 +1266,74 @@ class Focustime:
     # -- stato -------------------------------------------------------------- #
 
     @property
+    def phase(self) -> str:
+        return self.engine.phase
+
+    @phase.setter
+    def phase(self, value: str):
+        self.engine.phase = value
+
+    @property
+    def running(self) -> bool:
+        return self.engine.running
+
+    @running.setter
+    def running(self, value: bool):
+        self.engine.running = value
+
+    @property
+    def completed(self) -> int:
+        return self.engine.completed
+
+    @completed.setter
+    def completed(self, value: int):
+        self.engine.completed = value
+
+    @property
+    def duration(self) -> float:
+        return self.engine.duration
+
+    @duration.setter
+    def duration(self, value: float):
+        self.engine.duration = value
+
+    @property
+    def left(self) -> float:
+        return self.engine.left
+
+    @left.setter
+    def left(self, value: float):
+        self.engine.left = value
+
+    @property
+    def up(self) -> float:
+        return self.engine.up
+
+    @up.setter
+    def up(self, value: float):
+        self.engine.up = value
+
+    @property
+    def end_at(self) -> float:
+        return self.engine.end_at
+
+    @end_at.setter
+    def end_at(self, value: float):
+        self.engine.end_at = value
+
+    @property
+    def start_at(self) -> float:
+        return self.engine.start_at
+
+    @start_at.setter
+    def start_at(self, value: float):
+        self.engine.start_at = value
+
+    @start_at.setter
+    def start_at(self, value: float):
+        self.engine.start_at = value
+
+    @property
     def tech(self) -> Technique:
         base = TECHNIQUES[self.index]
         over = self.custom.get(base.key)
