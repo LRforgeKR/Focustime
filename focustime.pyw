@@ -18,6 +18,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from techniques import Technique, TECHNIQUES
+from timer_engine import TimerEngine
 from settings import (
     get_settings_path,
     load_settings,
@@ -892,6 +893,10 @@ class Focustime:
 
         keys = [t.key for t in TECHNIQUES]
         self.index = keys.index(cfg["technique"]) if cfg.get("technique") in keys else 0
+        self.engine = TimerEngine(
+            self.tech,
+            auto_next=self.auto_next.get(),
+        )
 
         self.phase = "focus"          # focus | rest | long
         self.running = False
