@@ -11,7 +11,6 @@ import os
 import subprocess
 import sys
 import threading
-import time
 import tkinter as tk
 import webbrowser
 from dataclasses import replace
@@ -1363,16 +1362,6 @@ class Focustime:
         if self.flowing:
             return "FLOW ↑"
         return {"focus": "FOCUS", "rest": "PAUSA", "long": "PAUSA LUNGA"}[self.phase]
-
-    def _phase_seconds(self, phase: str) -> float:
-        t = self.tech
-        if phase == "focus":
-            return t.focus
-        if phase == "long":
-            return t.long_rest or t.rest
-        if t.ratio:  # Flowtime: la pausa dipende da quanto hai lavorato
-            return min(t.max_rest, max(t.min_rest, self.up / t.ratio))
-        return t.rest
 
     def _enter_phase(
         self,
