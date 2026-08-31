@@ -24,17 +24,16 @@ from settings import (
     migrate_legacy_settings,
     save_settings,
 )
+from windows_utils import (
+    on_a_monitor,
+    system_prefers_dark,
+    work_area,
+)
 
 try:
     import winsound
 except ImportError:  # non-Windows: l'app resta usabile, senza suoni
     winsound = None
-
-try:
-    import ctypes
-except ImportError:
-    ctypes = None
-
 
 __version__ = "1.0.0"
 REPO_URL = "https://github.com/LRforgeKR/Focustime"
@@ -52,62 +51,6 @@ def app_dir() -> Path:
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parent
-
-
-# --------------------------------------------------------------------------- #
-# Monitor
-#
-# Tkinter conosce solo lo schermo principale: winfo_screenwidth() ignora gli
-# altri monitor. Senza questo, ogni pannello verrebbe riportato a forza sullo
-# schermo primario appena sposti l'app su un secondo monitor.
-# --------------------------------------------------------------------------- #
-
-if ctypes is not None:
-
-    class _RECT(ctypes.Structure):
-        _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
-                    ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
-
-    class _POINT(ctypes.Structure):
-        _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
-
-    class _MONITORINFO(ctypes.Structure):
-        _fields_ = [("cbSize", ctypes.c_ulong), ("rcMonitor", _RECT),
-                    ("rcWork", _RECT), ("dwFlags", ctypes.c_ulong)]
-
-NEAREST, NONE = 2, 0
-
-
-def _monitor(x, y, flag):
-    if ctypes is None or not hasattr(ctypes, "windll"):
-        return None
-    try:
-        return ctypes.windll.user32.MonitorFromPoint(_POINT(int(x), int(y)), flag)
-    except Exception:
-        return None
-
-
-def work_area(widget, x, y) -> tuple[int, int, int, int]:
-    """Area utile (barra applicazioni esclusa) del monitor che contiene x, y."""
-    h = _monitor(x, y, NEAREST)
-    if h:
-        mi = _MONITORINFO()
-        mi.cbSize = ctypes.sizeof(_MONITORINFO)
-        try:
-            if ctypes.windll.user32.GetMonitorInfoW(h, ctypes.byref(mi)):
-                r = mi.rcWork
-                return r.left, r.top, r.right, r.bottom
-        except Exception:
-            pass
-    return 0, 0, widget.winfo_screenwidth(), widget.winfo_screenheight()
-
-
-def on_a_monitor(x, y) -> bool | None:
-    """Il punto cade dentro uno degli schermi collegati?"""
-    if ctypes is None or not hasattr(ctypes, "windll"):
-        return None            # non lo sappiamo: decide chi chiama
-    return bool(_monitor(x, y, NONE))
-
 
 # --------------------------------------------------------------------------- #
 # Avvio automatico con Windows
@@ -199,21 +142,6 @@ P: dict[str, str] = dict(PALETTES["dark"])
 def use_palette(name: str):
     P.clear()
     P.update(PALETTES.get(name, PALETTES["dark"]))
-
-
-def system_prefers_dark() -> bool | None:
-    """Windows è impostato su scuro? None se non riusciamo a saperlo."""
-    try:
-        import winreg
-        key = winreg.OpenKey(
-            winreg.HKEY_CURRENT_USER,
-            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize")
-        with key:
-            light, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
-        return not bool(light)
-    except Exception:
-        return None
-
 
 FONT_TIME = ("Segoe UI Semibold", 34)
 FONT_LABEL = ("Segoe UI", 9)
