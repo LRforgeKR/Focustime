@@ -56,3 +56,20 @@ TECHNIQUES: list[Technique] = [
               "quando il compito è noioso.",
     ),
 ]
+def schema(t: Technique) -> str:
+    """Riga che riassume le durate della tecnica."""
+    if t.ratio:
+        return (
+            f"pausa = lavoro ÷ {t.ratio}, "
+            f"da {t.min_rest // M} a {t.max_rest // M} min"
+        )
+
+    parts = [
+        f"{t.focus // M} min focus",
+        f"{t.rest // M} pausa",
+    ]
+
+    if t.long_rest:
+        parts.append(f"{t.long_rest // M} lunga ogni {t.cycle}")
+
+    return " · ".join(parts)
