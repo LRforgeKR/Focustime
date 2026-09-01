@@ -7,8 +7,6 @@ Tema chiaro o scuro, pannello Preferenze e editor delle durate dal tasto destro.
 
 from __future__ import annotations
 
-import os
-import subprocess
 import sys
 import threading
 import tkinter as tk
@@ -18,6 +16,7 @@ from pathlib import Path
 
 from techniques import Technique, TECHNIQUES
 from timer_engine import TimerEngine
+
 from settings import (
     get_settings_path,
     load_settings,
@@ -35,6 +34,10 @@ try:
 except ImportError:  # non-Windows: l'app resta usabile, senza suoni
     winsound = None
 
+from windows_startup import (
+    set_starts_with_windows,
+    starts_with_windows,
+)
 __version__ = "1.0.0"
 REPO_URL = "https://github.com/LRforgeKR/Focustime"
 
@@ -51,67 +54,6 @@ def app_dir() -> Path:
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parent
-
-# --------------------------------------------------------------------------- #
-# Avvio automatico con Windows
-# --------------------------------------------------------------------------- #
-
-LINK_NAME = "Focustime.lnk"
-NO_WINDOW = 0x08000000
-
-
-def startup_link() -> Path:
-    base = os.environ.get("APPDATA", "")
-    return (Path(base) / "Microsoft" / "Windows" / "Start Menu" / "Programs"
-            / "Startup" / LINK_NAME)
-
-
-def starts_with_windows() -> bool:
-    try:
-        return startup_link().exists()
-    except Exception:
-        return False
-
-
-def set_starts_with_windows(on: bool) -> bool:
-    """Crea o toglie il collegamento nella cartella Esecuzione automatica."""
-    link = startup_link()
-    if not on:
-        try:
-            link.unlink(missing_ok=True)
-        except OSError:
-            pass
-        return starts_with_windows()
-
-    if getattr(sys, "frozen", False):
-        target, args = Path(sys.executable), ""
-    else:
-        exe = Path(sys.executable)
-        quiet = exe.with_name("pythonw.exe")       # niente finestra nera
-        target = quiet if quiet.exists() else exe
-        args = f'"{Path(__file__).resolve()}"'
-    workdir = app_dir()
-
-    def q(value):                                  # apici nelle stringhe PS
-        return str(value).replace("'", "''")
-
-    script = (
-        f"$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{q(link)}');"
-        f"$s.TargetPath='{q(target)}';"
-        f"$s.Arguments='{q(args)}';"
-        f"$s.WorkingDirectory='{q(workdir)}';"
-        f"$s.Description='Focustime';$s.Save()"
-    )
-    try:
-        link.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(["powershell", "-NoProfile", "-NonInteractive",
-                        "-Command", script],
-                       creationflags=NO_WINDOW, timeout=20,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except Exception:
-        pass
-    return starts_with_windows()
-
 
 # --------------------------------------------------------------------------- #
 # Temi
@@ -964,12 +906,23 @@ class Focustime:
         Il collegamento lo costruisce PowerShell e ci mette quasi un secondo:
         farlo qui bloccherebbe il countdown, quindi va su un thread a parte.
         """
+
         if self._startup_busy:
             return
+
         wanted = bool(self.startup.get())
 
         def work():
-            done = set_starts_with_windows(wanted)
+            
+
+            done = set_starts_with_windows(
+                wanted,
+                source_file=Path(__file__).resolve(),
+                workdir=app_dir(),
+            )
+
+           
+
             self.root.after(0, finish, done)
 
         def finish(done):
