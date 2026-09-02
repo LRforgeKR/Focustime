@@ -73,3 +73,12 @@ def schema(t: Technique) -> str:
         parts.append(f"{t.long_rest // M} lunga ogni {t.cycle}")
 
     return " · ".join(parts)
+
+def is_minutes_field(attr: str) -> bool:
+    return attr in {
+        "focus",
+        "rest",
+        "long_rest",
+        "min_rest",
+        "max_rest",
+    }

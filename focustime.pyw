@@ -11,10 +11,10 @@ import sys
 import threading
 import tkinter as tk
 import webbrowser
+
 from dataclasses import replace
 from pathlib import Path
 
-from techniques import Technique, TECHNIQUES, schema
 from timer_engine import TimerEngine
 from ui_overlays import About, Toast
 from settings import (
@@ -23,6 +23,14 @@ from settings import (
     migrate_legacy_settings,
     save_settings,
 )
+
+from techniques import (
+    Technique,
+    TECHNIQUES,
+    is_minutes_field,
+    schema,
+)
+
 from windows_utils import (
     on_a_monitor,
     system_prefers_dark,
@@ -857,9 +865,15 @@ class Focustime:
     def apply_custom(self, values: dict[str, int]):
         """Salva le durate scelte per la tecnica corrente e le applica subito."""
         base = TECHNIQUES[self.index]
-        diff = {a: n for a, n in values.items()
-                if n != (getattr(base, a) // M if Editor._is_minutes(a)
-                         else getattr(base, a))}
+        diff = {
+                a: n
+                for a, n in values.items()
+                if n != (
+                            getattr(base, a) // M
+                            if Editor._is_minutes(a)
+                            else getattr(base, a)
+                )
+        }
         if diff:
             self.custom[base.key] = diff
         else:
