@@ -133,11 +133,13 @@ class Editor(Panel):
         base: Technique,
         on_save,
         on_close,
+        max_cycle: int,
     ):
         self.t = t
         self.base = base
         self.on_save = on_save
         self.on_close = on_close
+        self.max_cycle = max_cycle
 
         self.fields = self._spec()
         height = 48 + self.ROW * len(self.fields) + 50
@@ -241,8 +243,8 @@ class Editor(Panel):
         self.below_or_above(
             master.winfo_rootx(),
             master.winfo_rooty(),
-            W,
-            H,
+            master.winfo_width(),
+            master.winfo_height(),
             self.WIDTH,
             height,
         )
@@ -266,7 +268,7 @@ class Editor(Panel):
             ("Focus", "focus", 1, 600, "min"),
             ("Pausa", "rest", 1, 600, "min"),
             ("Pausa lunga  (0 = nessuna)", "long_rest", 0, 600, "min"),
-            ("Ogni quanti focus", "cycle", 2, MAX_DOTS, ""),
+            ("Ogni quanti focus", "cycle", 2, self.max_cycle, ""),
         ]
 
     def _value(self, attr, t: Technique | None = None):
@@ -923,6 +925,7 @@ class Focustime:
             base=TECHNIQUES[self.index],
             on_save=self.apply_custom,
             on_close=self._editor_closed,
+            max_cycle=MAX_DOTS,
         )
 
     def _editor_closed(self):
