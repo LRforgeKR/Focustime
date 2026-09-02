@@ -1,14 +1,34 @@
 import json
 import os
+import sys
+
 from pathlib import Path
 from typing import Any
 
 
 APP_NAME = "Focustime"
+PORTABLE_FLAG = "portable.flag"
+
+
+def get_app_dir() -> Path:
+    """Restituisce la cartella reale dell'applicazione."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+
+    return Path(__file__).resolve().parent
+
+
+def is_portable_mode() -> bool:
+    """True se accanto all'applicazione esiste portable.flag."""
+    return (get_app_dir() / PORTABLE_FLAG).is_file()
 
 
 def get_settings_path() -> Path:
     """Restituisce la posizione delle impostazioni dell'utente."""
+
+    if is_portable_mode():
+        return get_app_dir() / "data" / "settings.json"
+
     base = os.environ.get("LOCALAPPDATA")
 
     if base:
