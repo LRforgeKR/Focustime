@@ -194,13 +194,9 @@ class Editor(Panel):
             ("Ogni quanti focus", "cycle", 2, MAX_DOTS, ""),
         ]
 
-    @staticmethod
-    def _is_minutes(attr):
-        return attr in ("focus", "rest", "long_rest", "min_rest", "max_rest")
-
     def _value(self, attr, t: Technique | None = None):
         v = getattr(t or self.t, attr)
-        return v // M if self._is_minutes(attr) else v
+        return v // M if is_minutes_field(attr) else v
 
     # -- comandi ------------------------------------------------------------ #
 
@@ -870,7 +866,7 @@ class Focustime:
                 for a, n in values.items()
                 if n != (
                             getattr(base, a) // M
-                            if Editor._is_minutes(a)
+                            if is_minutes_field(a)
                             else getattr(base, a)
                 )
         }
@@ -909,7 +905,7 @@ class Focustime:
         for attr, n in over.items():
             if not hasattr(base, attr):
                 continue
-            fields[attr] = n * M if Editor._is_minutes(attr) else n
+            fields[attr] = n * M if is_minutes_field(attr) else n
         return replace(base, **fields) if fields else base
 
     @property
